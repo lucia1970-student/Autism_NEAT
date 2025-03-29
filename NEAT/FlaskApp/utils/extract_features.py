@@ -1,23 +1,32 @@
 # Feature extraction logic goes here
+import librosa
+import numpy as np
+from scipy.stats import variation
 
-def extract_features_from_audio(file):
-    y, sr = librosa.load(file, sr=None)
 
-    # 1. f0 estimation using librosa.yin
-    f0 = librosa.yin(y, fmin=50, fmax=500, sr=sr)
-    f0_mean = np.mean(f0)
+def extract_features_from_audio(file_path):
+    y, sr = librosa.load(file_path, sr=None)
+    
+    # F1 (fundamental frequency)
+    F1, _, _ = librosa.pyin(y, fmin=50, fmax=400)
+    avg_F1 = np.nanmean(F1)
 
-    # 2. Jitter = relative variation in f0
-    jitter = variation(f0)  # standard deviation / mean
+    # Jitter approximation: relative f0 variation
+    F1_diff = np.diff(F1)
+    jitter_s = np.nanmean(np.abs(F1_diff / F1[1:])) if F1 is not None else 0
 
-    # 3. Shimmer = variation in amplitude envelope
-    amplitude_env = np.abs(y)
-    shimmer = variation(amplitude_env)
+    # Shimmer approximation: energy envelope variability
+    energy = librosa.feature.rms(y=y)[0]
+    shimmer = np.mean(np.abs(np.diff(energy))) if len(energy) > 1 else 0
 
-    # 4. HNR (approximate): harmonic-to-noise ratio via energy stats
-    signal_energy = np.sum(y ** 2)
-    noise_energy = np.sum((y - np.mean(y)) ** 2)
-    hnr = 10 * np.log10(signal_energy / (noise_energy + 1e-6))
-    hnr = np.clip(hnr, 0, 100)  # avoid wild spikes
+    # HNR approximation using harmonic-to-noise ratio from autocorrelation
+    autocorr = librosa.autocorrelate(y)
+    mean_hnr = 10 * np.log10(np.max(autocorr) / (np.mean(autocorr) + 1e-6))
 
-    return [f0_mean, jitter, shimmer, hnr]
+    # MFCCs (mean over time frames)
+    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+    mfcc_means = np.mean(mfcc, axis=1)
+
+    # Return both acoustic and MFCCs
+    features = [avg_F1, jitter_s, shimmer, mean_hnr]
+    return features, mfcc_means
