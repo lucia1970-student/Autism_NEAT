@@ -1,0 +1,13 @@
+digraph {
+	node [fontsize=9 height=0.2 shape=circle width=0.2]
+	F1 [fillcolor=lightgray shape=box style=filled]
+	jitter_s [fillcolor=lightgray shape=box style=filled]
+	shimmer [fillcolor=lightgray shape=box style=filled]
+	mean_hnr [fillcolor=lightgray shape=box style=filled]
+	"Non-Autistic" [fillcolor=lightblue style=filled]
+	Autistic [fillcolor=lightblue style=filled]
+	mean_hnr -> Autistic [color=green penwidth=0.388037150036882 style=solid]
+	mean_hnr -> "Non-Autistic" [color=red penwidth=0.4795267735797596 style=solid]
+	jitter_s -> "Non-Autistic" [color=red penwidth=0.3118831910015261 style=solid]
+	shimmer -> Autistic [color=red penwidth=0.277299363211296 style=solid]
+}
